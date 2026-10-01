@@ -10,6 +10,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Shield
@@ -35,6 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +55,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,6 +85,7 @@ fun HomeScreen(
     val profiles by vm.profiles.collectAsStateWithLifecycle()
     val selected by vm.selected.collectAsStateWithLifecycle()
     val traffic by vm.traffic.collectAsStateWithLifecycle()
+    val callsOnly by vm.callsOnly.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
@@ -89,6 +95,7 @@ fun HomeScreen(
         profiles = profiles,
         selected = selected,
         traffic = traffic,
+        callsOnly = callsOnly,
         snackbar = snackbar,
         onConnect = onConnect,
         onDisconnect = vm::disconnect,
@@ -97,6 +104,7 @@ fun HomeScreen(
         onScanQr = onScanQr,
         onImportFile = onImportFile,
         onPaste = vm::importText,
+        onCallsOnlyChange = vm::setCallsOnly,
     )
 }
 
@@ -106,6 +114,7 @@ fun HomeContent(
     profiles: List<Profile>,
     selected: Profile?,
     traffic: Traffic,
+    callsOnly: Boolean,
     snackbar: SnackbarHostState,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
@@ -114,6 +123,7 @@ fun HomeContent(
     onScanQr: () -> Unit,
     onImportFile: () -> Unit,
     onPaste: (String, String) -> Boolean,
+    onCallsOnlyChange: (Boolean) -> Unit,
     initiallyShowSheet: Boolean = false,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -206,6 +216,8 @@ fun HomeContent(
 
             Spacer(Modifier.weight(0.4f))
 
+            CallsOnlyCard(callsOnly, enabled = !busy, onChange = onCallsOnlyChange)
+            Spacer(Modifier.height(12.dp))
             ServerCard(selected, onClick = { showSheet = true })
             Spacer(Modifier.height(8.dp))
         }
@@ -290,6 +302,41 @@ private fun StatCard(icon: ImageVector, label: String, value: String, day: Float
                 Text(label, style = MaterialTheme.typography.labelMedium, color = Sky.TextMuted)
                 Text(value, style = MaterialTheme.typography.titleMedium.merge(Tabular), color = Sky.TextPrimary)
             }
+        }
+    }
+}
+
+@Composable
+private fun CallsOnlyCard(checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Glass(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
+                .padding(horizontal = 18.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Call, null, tint = if (checked) Sky.Gold else Sky.Moon)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Calls only", style = MaterialTheme.typography.titleMedium, color = Sky.TextPrimary)
+                Text(
+                    if (checked) "Only WhatsApp & Messenger" else "All apps go through the VPN",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Sky.TextSecondary,
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = null,
+                enabled = enabled,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Sky.Midnight,
+                    checkedTrackColor = Sky.Gold,
+                    uncheckedThumbColor = Sky.Moon,
+                    uncheckedTrackColor = Sky.Glass,
+                    uncheckedBorderColor = Sky.GlassBorder,
+                ),
+            )
         }
     }
 }

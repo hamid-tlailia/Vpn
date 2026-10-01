@@ -25,6 +25,14 @@ class ProfileStore(context: Context) {
     private val _selected = MutableStateFlow(prefs.getString(KEY_SELECTED, null))
     val selected: StateFlow<String?> = _selected.asStateFlow()
 
+    private val _callsOnly = MutableStateFlow(prefs.getBoolean(KEY_CALLS_ONLY, false))
+    val callsOnly: StateFlow<Boolean> = _callsOnly.asStateFlow()
+
+    fun setCallsOnly(enabled: Boolean) {
+        _callsOnly.value = enabled
+        prefs.edit().putBoolean(KEY_CALLS_ONLY, enabled).apply()
+    }
+
     /** Parses [text] as a WireGuard config and saves it. Returns the saved profile. */
     fun add(rawName: String, text: String): Profile {
         val config = parse(text)
@@ -66,6 +74,7 @@ class ProfileStore(context: Context) {
 
     companion object {
         private const val KEY_SELECTED = "selected"
+        private const val KEY_CALLS_ONLY = "calls_only"
         // WireGuard interface names: ^[a-zA-Z0-9_=+.-]{1,15}$
         private const val MAX_NAME = 15
 

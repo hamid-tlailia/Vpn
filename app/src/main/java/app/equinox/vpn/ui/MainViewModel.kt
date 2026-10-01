@@ -29,6 +29,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val vpnState = vpn.state
     val profiles = store.profiles
+    val callsOnly = store.callsOnly
 
     val selected: StateFlow<Profile?> = combine(store.profiles, store.selected) { list, name ->
         list.firstOrNull { it.name == name } ?: list.firstOrNull()
@@ -53,7 +54,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun connect() {
         val profile = selected.value ?: return
         viewModelScope.launch {
-            runCatching { vpn.connect(profile) }.onFailure { _messages.tryEmit(it.message ?: "Connection failed") }
+            runCatching { vpn.connect(profile, store.callsOnly.value) }.onFailure { _messages.tryEmit(it.message ?: "Connection failed") }
         }
     }
 
@@ -61,6 +62,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             runCatching { vpn.disconnect() }.onFailure { _messages.tryEmit("Could not disconnect cleanly") }
         }
+    }
+
+    fun setCallsOnly(enabled: Boolean) {
+        store.setCallsOnly(enabled)
+        // Re-apply routing to a live tunnel.
+        if (vpnState.value.phase == Phase.Connected) connect()
     }
 
     fun select(profile: Profile) {

@@ -25,7 +25,8 @@ data class Traffic(val rx: Long = 0, val tx: Long = 0)
 
 /** Thin wrapper around the WireGuard Go backend. One tunnel at a time. */
 class VpnController(context: Context) {
-    private val backend: Backend by lazy { GoBackend(context.applicationContext) }
+    private val appContext = context.applicationContext
+    private val backend: Backend by lazy { GoBackend(appContext) }
 
     private val _state = MutableStateFlow(VpnState())
     val state: StateFlow<VpnState> = _state.asStateFlow()
@@ -42,16 +43,23 @@ class VpnController(context: Context) {
         }
     }
 
-    suspend fun connect(profile: Profile) = withContext(Dispatchers.IO) {
+    suspend fun connect(profile: Profile, callsOnly: Boolean) = withContext(Dispatchers.IO) {
         _state.value = VpnState(Phase.Connecting, profile.name)
         try {
+            val config = if (callsOnly) {
+                val apps = CallsOnly.installed(appContext.packageManager)
+                if (apps.isEmpty()) throw IllegalStateException("WhatsApp or Messenger isn't installed")
+                CallsOnly.restrict(profile.config, apps)
+            } else {
+                profile.config
+            }
             val previous = tunnel
             if (previous != null && previous.name != profile.name) {
                 backend.setState(previous, Tunnel.State.DOWN, null)
             }
             val next = previous?.takeIf { it.name == profile.name } ?: AppTunnel(profile.name)
             tunnel = next
-            backend.setState(next, Tunnel.State.UP, profile.config)
+            backend.setState(next, Tunnel.State.UP, config)
             _state.value = VpnState(Phase.Connected, profile.name, System.currentTimeMillis())
         } catch (e: Exception) {
             tunnel = null
