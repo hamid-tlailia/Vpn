@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.equinox.vpn.EquinoxApp
 import app.equinox.vpn.data.Profile
+import app.equinox.vpn.data.WarpRegistrar
 import app.equinox.vpn.vpn.Phase
 import app.equinox.vpn.vpn.Traffic
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _traffic = MutableStateFlow(Traffic())
     val traffic: StateFlow<Traffic> = _traffic.asStateFlow()
+
+    private val _warpBusy = MutableStateFlow(false)
+    val warpBusy: StateFlow<Boolean> = _warpBusy.asStateFlow()
 
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val messages: SharedFlow<String> = _messages
@@ -93,6 +97,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     } catch (e: Exception) {
         _messages.tryEmit("That isn't a valid WireGuard config")
         false
+    }
+
+    /** One tap: create a free Cloudflare WARP account for this device and add it. */
+    fun getFreeServer() {
+        if (_warpBusy.value) return
+        _warpBusy.value = true
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { WarpRegistrar.register() } }
+            _warpBusy.value = false
+            result.onSuccess { importText("WARP", it) }
+                .onFailure { _messages.tryEmit("Couldn't reach Cloudflare. Try another network.") }
+        }
     }
 
     fun importUri(uri: Uri) {

@@ -20,11 +20,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +65,8 @@ fun ServersSheet(
     onScanQr: () -> Unit,
     onImportFile: () -> Unit,
     onPaste: (String, String) -> Boolean,
+    warpBusy: Boolean,
+    onGetFreeServer: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var showPaste by rememberSaveable { mutableStateOf(false) }
@@ -119,6 +124,8 @@ fun ServersSheet(
             Spacer(Modifier.height(24.dp))
             Text("ADD SERVER", style = MaterialTheme.typography.labelSmall, color = Sky.TextMuted)
             Spacer(Modifier.height(12.dp))
+            FreeServerCard(busy = warpBusy, onClick = onGetFreeServer)
+            Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AddTile(Icons.Rounded.QrCodeScanner, "Scan QR", onScanQr, Modifier.weight(1f))
                 AddTile(Icons.Rounded.FileOpen, "Import file", onImportFile, Modifier.weight(1f))
@@ -178,6 +185,47 @@ private fun ServerRow(profile: Profile, isSelected: Boolean, isActive: Boolean, 
         }
         IconButton(onClick = onDelete) {
             Icon(Icons.Rounded.DeleteOutline, "Remove", tint = Sky.TextMuted)
+        }
+    }
+}
+
+@Composable
+private fun FreeServerCard(busy: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Brush.horizontalGradient(listOf(Sky.Twilight, Sky.Dusk.copy(alpha = 0.7f))))
+            .border(1.dp, Sky.Gold.copy(alpha = 0.45f), shape)
+            .clickable(enabled = !busy, onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            if (busy) {
+                CircularProgressIndicator(Modifier.size(24.dp), color = Sky.Gold, strokeWidth = 2.5.dp)
+            } else {
+                Icon(Icons.Rounded.Bolt, null, tint = Sky.Gold, modifier = Modifier.size(28.dp))
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                if (busy) "Creating your server…" else "Get a free server",
+                style = MaterialTheme.typography.titleMedium,
+                color = Sky.TextPrimary,
+            )
+            Text(
+                "Cloudflare WARP · your own private account",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Sky.TextSecondary,
+            )
+            Text(
+                "By tapping you accept Cloudflare's Terms of Service",
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.sp),
+                color = Sky.TextMuted,
+            )
         }
     }
 }

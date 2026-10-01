@@ -86,6 +86,7 @@ fun HomeScreen(
     val selected by vm.selected.collectAsStateWithLifecycle()
     val traffic by vm.traffic.collectAsStateWithLifecycle()
     val callsOnly by vm.callsOnly.collectAsStateWithLifecycle()
+    val warpBusy by vm.warpBusy.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
@@ -105,6 +106,8 @@ fun HomeScreen(
         onImportFile = onImportFile,
         onPaste = vm::importText,
         onCallsOnlyChange = vm::setCallsOnly,
+        warpBusy = warpBusy,
+        onGetFreeServer = vm::getFreeServer,
     )
 }
 
@@ -124,6 +127,8 @@ fun HomeContent(
     onImportFile: () -> Unit,
     onPaste: (String, String) -> Boolean,
     onCallsOnlyChange: (Boolean) -> Unit,
+    warpBusy: Boolean,
+    onGetFreeServer: () -> Unit,
     initiallyShowSheet: Boolean = false,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -248,6 +253,8 @@ fun HomeContent(
             onScanQr = { showSheet = false; onScanQr() },
             onImportFile = { showSheet = false; onImportFile() },
             onPaste = onPaste,
+            warpBusy = warpBusy,
+            onGetFreeServer = onGetFreeServer,
             onDismiss = { showSheet = false },
         )
     }
@@ -369,7 +376,7 @@ private fun ServerCard(profile: Profile?, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    profile?.endpoint ?: "Scan a QR code or import a .conf file",
+                    profile?.endpoint ?: "Get a free server in one tap",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Sky.TextSecondary,
                     maxLines = 1,

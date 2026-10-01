@@ -10,7 +10,7 @@ A personal VPN app for Android with **no ads, no tracking and no accounts**. It 
 - English only, one main screen, one button.
 - Built on the official **WireGuard** engine (fast, modern, low battery use).
 - **Calls only** mode: only WhatsApp and Messenger go through the VPN, and every other app uses the normal internet at full speed.
-- Add a server by **QR code**, a `.conf` file, or by pasting the config text.
+- **Get a free server** in one tap (Cloudflare WARP), or add your own by **QR code**, a `.conf` file, or by pasting the config text.
 
 ---
 
@@ -22,18 +22,11 @@ The free alternative that does work is **Oracle Cloud Always Free** (a real serv
 
 ---
 
-## Fastest way (no server, no card): Cloudflare WARP
+## Fastest way (no server, no card): one tap
 
-1. Install **Termux** from F-Droid.
-2. From [github.com/ViRb3/wgcf/releases](https://github.com/ViRb3/wgcf/releases), download the file ending in `linux_arm64`.
-3. In Termux:
-   ```bash
-   termux-setup-storage
-   cp ~/storage/downloads/wgcf_*_linux_arm64 ~/wgcf && chmod +x ~/wgcf
-   cd ~ && ./wgcf register --accept-tos && ./wgcf generate
-   cp wgcf-profile.conf ~/storage/downloads/
-   ```
-4. In Equinox: **Import file** → `wgcf-profile.conf` → connect.
+Open Equinox → tap the server card → **Get a free server**.
+The app creates a free **Cloudflare WARP** account for this device and adds it automatically.
+Every person who installs the app gets their own separate account, so you can share the APK freely.
 
 > WARP hides your IP and encrypts traffic, but it usually doesn't change your apparent country, and some networks block it.
 > For a server that only you control, follow the steps below.
